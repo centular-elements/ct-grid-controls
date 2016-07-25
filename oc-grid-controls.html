@@ -4,6 +4,7 @@
 <link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../paper-listbox/paper-listbox.html">
 <link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../iron-location/iron-location.html">
 
 <!--
 `oc-grid-controls`
@@ -18,20 +19,27 @@ A wrapper component to add search and pagination functionality to data tables on
       :host {
         display: block;
       }
+
     </style>
+
+    <app-location route="{{route}}"></app-location>
+    <app-route route="{{route}}" pattern="/option-sets" query-params="{{queryParams}}" data="{{pathData}}" active></app-route>
+
+
     <paper-dropdown-menu label="Items to display">
-      <paper-listbox class="dropdown-content">
-        <paper-item>10</paper-item>
-        <paper-item>25</paper-item>
-        <paper-item>50</paper-item>
-        <paper-item>100</paper-item>
+      <paper-listbox class="dropdown-content" attr-for-selected="value" selected="{{numEntries}}" fallback-selection="10">
+        <paper-item value="1">1</paper-item>
+        <paper-item value="10">10</paper-item>
+        <paper-item value="25">25</paper-item>
+        <paper-item value="50">50</paper-item>
+        <paper-item value="100">100</paper-item>
       </paper-listbox>
     </paper-dropdown-menu>
     <paper-input label="Filter" always-float-label value="{{filter}}"></paper-input>
 
     <content id="myContent"></content>
 
-    <mercury-paginator perpage="1" items="{{items}}"></mercury-paginator>
+    <mercury-paginator perpage="{{numEntries}}" items="{{items}}"></mercury-paginator>
   </template>
 
   <script>
@@ -69,12 +77,35 @@ A wrapper component to add search and pagination functionality to data tables on
           value: function(){
             return []
           }
+        },
+        numEntries : {
+          type: Number,
+          value: 1,
+          notify: true,
+          observer: "_computePagination"
+        },
+        currentPage : {
+          type: Number,
+          value: 0
+        },
+        queryParams : {
+          type: Object,
+          notify: true
+        },
+
+        pathData : {
+          type: Object,
+          notify: true,
+          observer: "_pathData"
+
         }
+
 
       },
 
       listeners : {
-        "data-capture" : "_dataHandler"
+        "data-capture" : "_dataHandler",
+        "pager-change" : "_pageChangeHandler"
       },
 
       _filterHandler : function(filterValue){
@@ -91,16 +122,75 @@ A wrapper component to add search and pagination functionality to data tables on
       },
 
       _dataChanged: function(data){
-        var element = this.$$('mercury-paginator');
-        element.data = this.data;
-        console.log(element.itemsToDisplay);
+        console.log("promise data", data);
 
-        var effectiveChildren = this.getContentChildren('#myContent');
-        if (data.length) {
-          effectiveChildren[0].items = element.items;
+
+        if(data.count > 0) {
+
+          this._setPagination(data, this.numEntries);
+          this._setDataGridValues(data.results, this.currentPage, this.numEntries);
+
+        }
+
+//        if (data.length) {
+//          effectiveChildren[0].items = element.items;
+//        }
+
+//        this._setPagination(data);
+//        var element = this.$$('mercury-paginator');
+//        element.data = this.data;
+//        console.log(element.itemsToDisplay);
+//
+//        var effectiveChildren = this.getContentChildren('#myContent');
+//        if (data.length) {
+//          effectiveChildren[0].items = element.items;
+//        }
+
+
+      },
+
+      _setPagination : function(data, itemsPerPage){
+        var data = data.results || [];
+        var paginator = this.$$('mercury-paginator');
+        console.log("pagination data", data, itemsPerPage);
+
+
+        if(data.length){
+          paginator.data = data;
         }
 
 
+
+
+      },
+
+      _setDataGridValues : function(data, currentPage, numEntries){
+        var effectiveChildren = this.getContentChildren('#myContent');
+        this.itemsToDisplay = data;
+        effectiveChildren[0].items = this._filterResults(data, currentPage, numEntries);
+        console.log('items', effectiveChildren[0].items)
+      },
+
+      _filterResults : function(data, currentPage, numEntries){
+        return data.slice(parseInt(currentPage) * parseInt(numEntries), (parseInt(currentPage) * parseInt(numEntries)) + parseInt(numEntries));
+      },
+
+      _computePagination : function(itemsPerPage){
+//        this._setPagination([], itemsPerPage);
+      },
+
+      _pageChangeHandler : function(event){
+        var data = event.detail;
+        if(data.data.length) {
+          this._setDataGridValues(this.itemsToDisplay, data.page, data.pagesize)
+        }
+
+        this.queryParams = {"pageNum" : data.page, "numEntries" : data.pagesize}
+
+      },
+
+      _pathData : function(event){
+        console.log("path detail", event.detail);
       },
 
       ready : function() {
