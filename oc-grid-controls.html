@@ -34,9 +34,10 @@ A wrapper component to add search and pagination functionality to data tables on
         <paper-item value="100">100</paper-item>
       </paper-listbox>
     </paper-dropdown-menu>
+
     <paper-input label="Filter" always-float-label value="{{filter}}"></paper-input>
 
-    <content id="myContent"></content>
+    <content id="dataTable"></content>
 
     <mercury-paginator perpage="{{numEntries}}" currentpage="{{currentPage}}" items="{{items}}"></mercury-paginator>
   </template>
@@ -65,10 +66,9 @@ A wrapper component to add search and pagination functionality to data tables on
           type: Array,
           value: function(){
             return []
-          },
-          observer: "_dataChanged"
+          }
         },
-        totalPages: {
+        totalCount: {
           type: Number
         },
         itemsToDisplay : {
@@ -101,6 +101,10 @@ A wrapper component to add search and pagination functionality to data tables on
         "pager-change" : "_pageChangeHandler"
       },
 
+      observers: [
+        '_dataChanged(data, totalCount)',
+      ],
+
       _filterHandler : function(filterValue){
         this.filterObj = [{"path" : "name"}, {"path" : "displayName"}];
 
@@ -108,23 +112,19 @@ A wrapper component to add search and pagination functionality to data tables on
           this.filterObj[i].filter = filterValue || "";
         }
 
-        var effectiveChildren = this.getContentChildren('#myContent');
+        var effectiveChildren = this.getContentChildren('#dataTable');
         effectiveChildren[0].filter = this.filterObj;
-//        console.log(effectiveChildren);
-
       },
 
-      _dataChanged: function(data){
-        console.log("promise data", data);
-
-
-        if(data.count > 0) {
+      _dataChanged: function(data, totalCount){
+        console.log("data", data);
+        if(this.totalCount > 0) {
 
 //          this.currentPage = this.queryParams.pageNum || 0;
 //          this.numEntries = this.queryParams.numEntries || 10;
 
           this._setPagination(data, this.numEntries);
-          this._setDataGridValues(data.results, this.currentPage, this.numEntries);
+          this._setDataGridValues(data, this.currentPage, this.numEntries);
 
         }
 
@@ -146,10 +146,8 @@ A wrapper component to add search and pagination functionality to data tables on
       },
 
       _setPagination : function(data, itemsPerPage){
-        var data = data.results || [];
+        var data = data || [];
         var paginator = this.$$('mercury-paginator');
-        console.log("pagination data", data, itemsPerPage);
-
 
         if(data.length){
           paginator.data = data;
@@ -161,10 +159,9 @@ A wrapper component to add search and pagination functionality to data tables on
       },
 
       _setDataGridValues : function(data, currentPage, numEntries){
-        var effectiveChildren = this.getContentChildren('#myContent');
+        var effectiveChildren = this.getContentChildren('#dataTable');
         this.itemsToDisplay = data;
         effectiveChildren[0].items = this._filterResults(data, currentPage, numEntries);
-        console.log('items', effectiveChildren[0].items)
       },
 
       _filterResults : function(data, currentPage, numEntries){
