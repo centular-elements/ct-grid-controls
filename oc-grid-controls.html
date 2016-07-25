@@ -1,6 +1,9 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../mercury-paginator/mercury-paginator.html">
 <link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-item/paper-item.html">
 
 <!--
 `oc-grid-controls`
@@ -16,6 +19,14 @@ A wrapper component to add search and pagination functionality to data tables on
         display: block;
       }
     </style>
+    <paper-dropdown-menu label="Items to display">
+      <paper-listbox class="dropdown-content">
+        <paper-item>10</paper-item>
+        <paper-item>25</paper-item>
+        <paper-item>50</paper-item>
+        <paper-item>100</paper-item>
+      </paper-listbox>
+    </paper-dropdown-menu>
     <paper-input label="Filter" always-float-label value="{{filter}}"></paper-input>
 
     <content id="myContent"></content>
