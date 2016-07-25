@@ -1,10 +1,9 @@
 <link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="../mercury-paginator/mercury-paginator.html">
+<link rel="import" href="../oc-paginator/mercury-paginator.html">
 <link rel="import" href="../paper-input/paper-input.html">
 <link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../paper-listbox/paper-listbox.html">
 <link rel="import" href="../paper-item/paper-item.html">
-<link rel="import" href="../iron-location/iron-location.html">
 
 <!--
 `oc-grid-controls`
@@ -22,8 +21,8 @@ A wrapper component to add search and pagination functionality to data tables on
 
     </style>
 
-    <app-location route="{{route}}"></app-location>
-    <app-route route="{{route}}" pattern="/option-sets" query-params="{{queryParams}}" data="{{pathData}}" active></app-route>
+    <!--<app-location route="{{route}}"></app-location>-->
+    <!--<app-route route="{{route}}" pattern="/option-sets" query-params="{{queryParams}}" data="{{pathData}}" active></app-route>-->
 
 
     <paper-dropdown-menu label="Items to display">
@@ -39,7 +38,7 @@ A wrapper component to add search and pagination functionality to data tables on
 
     <content id="myContent"></content>
 
-    <mercury-paginator perpage="{{numEntries}}" items="{{items}}"></mercury-paginator>
+    <mercury-paginator perpage="{{numEntries}}" currentpage="{{currentPage}}" items="{{items}}"></mercury-paginator>
   </template>
 
   <script>
@@ -88,17 +87,11 @@ A wrapper component to add search and pagination functionality to data tables on
           type: Number,
           value: 0
         },
-        queryParams : {
-          type: Object,
-          notify: true
-        },
+//        queryParams : {
+//          type: Object,
+//          notify: true
+//        }
 
-        pathData : {
-          type: Object,
-          notify: true,
-          observer: "_pathData"
-
-        }
 
 
       },
@@ -126,6 +119,9 @@ A wrapper component to add search and pagination functionality to data tables on
 
 
         if(data.count > 0) {
+
+//          this.currentPage = this.queryParams.pageNum || 0;
+//          this.numEntries = this.queryParams.numEntries || 10;
 
           this._setPagination(data, this.numEntries);
           this._setDataGridValues(data.results, this.currentPage, this.numEntries);
@@ -182,10 +178,11 @@ A wrapper component to add search and pagination functionality to data tables on
       _pageChangeHandler : function(event){
         var data = event.detail;
         if(data.data.length) {
-          this._setDataGridValues(this.itemsToDisplay, data.page, data.pagesize)
+          this._setDataGridValues(this.itemsToDisplay, data.page, data.pagesize);
+//          this.queryParams = {"pageNum" : data.page, "numEntries" : data.pagesize}
         }
 
-        this.queryParams = {"pageNum" : data.page, "numEntries" : data.pagesize}
+
 
       },
 
