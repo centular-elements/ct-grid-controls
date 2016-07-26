@@ -19,10 +19,14 @@ A wrapper component to add search and pagination functionality to data tables on
         display: block;
       }
 
+      .no-data-message {
+        text-align: center;
+      }
+
     </style>
 
-    <!--<app-location route="{{route}}"></app-location>-->
-    <!--<app-route route="{{route}}" pattern="/option-sets" query-params="{{queryParams}}" data="{{pathData}}" active></app-route>-->
+    <app-location route="{{route}}"></app-location>
+    <app-route route="{{route}}" pattern="/:page" query-params="{{queryParams}}" data="{{pathData}}" active></app-route>
 
 
     <paper-dropdown-menu label="Items to display">
@@ -36,10 +40,13 @@ A wrapper component to add search and pagination functionality to data tables on
     </paper-dropdown-menu>
 
     <paper-input label="Filter" always-float-label value="{{filter}}"></paper-input>
+    <div hidden$="{{!hasData}}">
+      <content id="dataTable" ></content>
+    </div>
 
-    <content id="dataTable"></content>
+    <p class="no-data-message" hidden$="{{hasData}}">No data to display</p>
 
-    <mercury-paginator perpage="{{numEntries}}" currentpage="{{currentPage}}" items="{{items}}"></mercury-paginator>
+    <mercury-paginator></mercury-paginator>
   </template>
 
   <script>
@@ -71,26 +78,26 @@ A wrapper component to add search and pagination functionality to data tables on
         totalCount: {
           type: Number
         },
-        itemsToDisplay : {
-          type: Array,
-          value: function(){
-            return []
-          }
+        hasData : {
+          type: Boolean
+        },
+        asyncLoad : {
+          type: Boolean
         },
         numEntries : {
           type: Number,
           value: 1,
           notify: true,
-          observer: "_computePagination"
+          observer : "_scopeChanged"
         },
         currentPage : {
           type: Number,
           value: 0
         },
-//        queryParams : {
-//          type: Object,
-//          notify: true
-//        }
+        queryParams : {
+          type: Object,
+          notify: true
+        }
 
 
 
@@ -98,7 +105,7 @@ A wrapper component to add search and pagination functionality to data tables on
 
       listeners : {
         "data-capture" : "_dataHandler",
-        "pager-change" : "_pageChangeHandler"
+        "on-pagination-change" : "_paginationChangeHandler"
       },
 
       observers: [
@@ -117,82 +124,72 @@ A wrapper component to add search and pagination functionality to data tables on
       },
 
       _dataChanged: function(data, totalCount){
-        console.log("data", data);
-        if(this.totalCount > 0) {
 
-//          this.currentPage = this.queryParams.pageNum || 0;
-//          this.numEntries = this.queryParams.numEntries || 10;
+        if(data.length && totalCount > 0) {
+          this.hasData = true;
+          this.totalCount = totalCount;
+
+          if(Object.keys(this.queryParams).length > 0 && this.queryParams.constructor === Object) {
+            this.currentPage = parseInt(this.queryParams.page) -1  || 0;
+            this.numEntries = this.queryParams.numEntries || 10;
+          }
+
+          this.asyncLoad = this._checkAsycLoadNeeded(data.length, totalCount);
 
           this._setPagination(data, this.numEntries);
+          this._setActivePage(this.currentPage);
           this._setDataGridValues(data, this.currentPage, this.numEntries);
 
+        } else {
+          this.hasData = false;
         }
+      },
 
-//        if (data.length) {
-//          effectiveChildren[0].items = element.items;
-//        }
-
-//        this._setPagination(data);
-//        var element = this.$$('mercury-paginator');
-//        element.data = this.data;
-//        console.log(element.itemsToDisplay);
-//
-//        var effectiveChildren = this.getContentChildren('#myContent');
-//        if (data.length) {
-//          effectiveChildren[0].items = element.items;
-//        }
-
-
+      _checkAsycLoadNeeded : function(dataLength, totalCount){
+        return (dataLength !== totalCount);
       },
 
       _setPagination : function(data, itemsPerPage){
-        var data = data || [];
+
         var paginator = this.$$('mercury-paginator');
+        paginator.data = (this.asyncLoad) ? new Array(this.totalCount) : data;
+        paginator.perPage = itemsPerPage;
+      },
 
-        if(data.length){
-          paginator.data = data;
+      _setActivePage : function(pageNum){
+        var paginator = this.$$('mercury-paginator');
+        paginator.currentPage = pageNum;
+      },
+
+      _paginationChangeHandler : function(e){
+        this._setActivePage(e.detail.page);
+        if(!this.asyncLoad) {
+          this._setDataGridValues(this.data, e.detail.page, this.numEntries);
+          this.queryParams = {"page" : e.detail.page+1, "range" : this.numEntries}
+        } else {
+          this.fire("async-page-request", {"page" : e.detail.page+1, "range" : this.numEntries});
         }
-
-
-
 
       },
 
       _setDataGridValues : function(data, currentPage, numEntries){
-        var effectiveChildren = this.getContentChildren('#dataTable');
-        this.itemsToDisplay = data;
-        effectiveChildren[0].items = this._filterResults(data, currentPage, numEntries);
+        var table = this.getContentChildren('#dataTable');
+        table[0].items = (this.asyncLoad) ? data : this._filterResults(data, currentPage, numEntries);
       },
 
       _filterResults : function(data, currentPage, numEntries){
-        return data.slice(parseInt(currentPage) * parseInt(numEntries), (parseInt(currentPage) * parseInt(numEntries)) + parseInt(numEntries));
+        var currentPage = parseInt(currentPage);
+        var numEntries = parseInt(numEntries);
+        return data.slice(currentPage * numEntries, (currentPage * numEntries) + numEntries);
       },
 
-      _computePagination : function(itemsPerPage){
-//        this._setPagination([], itemsPerPage);
-      },
-
-      _pageChangeHandler : function(event){
-        var data = event.detail;
-        if(data.data.length) {
-          this._setDataGridValues(this.itemsToDisplay, data.page, data.pagesize);
-//          this.queryParams = {"pageNum" : data.page, "numEntries" : data.pagesize}
+      _scopeChanged : function(numEntries){
+        if(this.data.length){
+          this._setPagination(this.data, numEntries);
+          this._setActivePage(0);
+          this._setDataGridValues(this.data, 0, numEntries);
+          this.queryParams = {"page" : 1, "range" : numEntries}
         }
-
-
-
-      },
-
-      _pathData : function(event){
-        console.log("path detail", event.detail);
-      },
-
-      ready : function() {
-//        var effectiveChildren = this.getContentChildren('#myContent');
-//        effectiveChildren[0].items = this.data;
-//        console.log(effectiveChildren[0].items);
-//        window.location.search= "page=1";
-//        console.log(window.location.search);
 
       }
 
