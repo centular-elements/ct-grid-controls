@@ -1,7 +1,7 @@
 {
-  "name": "oc-grid-controls",
+  "name": "ct-grid-controls",
   "description": "A wrapper component to add search and pagination functionality to data tables on the Ordercloud platform",
-  "main": "oc-grid-controls.html",
+  "main": "ct-grid-controls.html",
   "dependencies": {
     "polymer": "Polymer/polymer#^1.4.0",
     "paper-dropdown-menu": "PolymerElements/paper-dropdown-menu#^1.3.2",

@@ -1,4 +1,4 @@
-# \<oc-grid-controls\>
+# \<ct-grid-controls\>
 
 A wrapper component to add search and pagination functionality to data tables on the Ordercloud platform
 
