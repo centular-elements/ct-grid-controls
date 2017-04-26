@@ -28,7 +28,69 @@ A wrapper component to add search and filtering functionality to data tables on 
         text-align: center;
       }
 
+      .filter-container {
+        display: flex;
+        align-items:flex-start;
+      }
+
+      .filter-container paper-input {
+        flex-grow: 5;
+      }
+
+      .filter-container paper-dropdown-menu,
+      .filter-container paper-button {
+        margin-left: 15px;
+        flex-grow: 1;
+      }
+
+      .filter-container paper-button {
+        height: 47px;
+        line-height: 35px;
+      }
+
+      .content-container {
+        margin-top: 15px;
+      }
+
     </style>
+
+    <div class="row">
+      <label>Search</label>
+      <div class="filter-container">
+
+        <paper-input label="Search" placeholder="[[_computeFilterText(filters)]]"></paper-input>
+
+        <paper-dropdown-menu label="# of Results">
+          <paper-listbox class="dropdown-content" selected="3">
+            <paper-item>10</paper-item>
+            <paper-item>25</paper-item>
+            <paper-item>50</paper-item>
+            <paper-item>100</paper-item>
+          </paper-listbox>
+        </paper-dropdown-menu>
+
+        <paper-button class="btn btn-primary">Search</paper-button>
+
+      </div>
+    </div>
+
+    <div class="row">
+      <div><em>Results for: </em><strong>my search query</strong></div>
+    </div>
+
+
+    <div class="row content-container">
+
+      <content is="iron-data-table" id="dataTable" hidden$="[[!_hasItems]]"></content>
+
+      <div class="no-data-message" hidden$="[[_hasItems]]">[[noDataMessage]]</div>
+
+    </div>
+
+    <div class="row pagination">
+
+    </div>
+
 
 
 
@@ -40,12 +102,72 @@ A wrapper component to add search and filtering functionality to data tables on 
           is: 'ct-grid-controls',
 
           properties : {
+              items : {
+                  type: Array,
+                  observer: '_updateData'
+              },
+
+              noDataMessage : {
+                  type: String,
+                  value: function(){
+                      return "No Data to Display"
+                  }
+              },
+
+              _hasItems : {
+                  type: Boolean,
+                  computed: '_computeHasItems(items)'
+              },
+
+              filters: {
+                  type: Array,
+              }
 
           },
 
           ready : function() {
 
+          },
+
+          _computeFilterText : function(filterArr){
+
+              var text = "Filter by ";
+
+              filterArr.forEach(function(item, index, array){
+                  text += item;
+
+                  if(index < array.length-2) {
+                      text += ", ";
+                  } else {
+
+                      if(index !== array.length-1){
+                          text += " or ";
+                      }
+
+                  }
+
+
+              });
+
+              return text;
+          },
+
+          _updateData : function(newValue, oldValue){
+
+
+
+              var elem = document.querySelector('iron-data-table');
+
+              if(!elem || elem == null || !newValue) return;
+
+              elem.items = newValue;
+
+          },
+
+          _computeHasItems : function(items){
+              return !!items.length;
           }
+
 
       });
   </script>
