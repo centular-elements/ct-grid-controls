@@ -139,13 +139,10 @@ A wrapper component to add search and filtering functionality to data tables on 
                   if(index < array.length-2) {
                       text += ", ";
                   } else {
-
                       if(index !== array.length-1){
                           text += " or ";
                       }
-
                   }
-
 
               });
 
@@ -154,11 +151,9 @@ A wrapper component to add search and filtering functionality to data tables on 
 
           _updateData : function(newValue, oldValue){
 
-
-
               var elem = document.querySelector('iron-data-table');
 
-              if(!elem || elem == null || !newValue) return;
+              if(!elem || elem === null || !newValue) return;
 
               elem.items = newValue;
 
